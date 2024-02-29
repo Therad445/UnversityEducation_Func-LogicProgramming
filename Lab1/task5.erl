@@ -1,11 +1,9 @@
--module(sublist_util).
+-module(task5). 
 -export([sublist/3]).
 
-sublist(List, N, M) when N > M -> [];
-sublist(List, N, M) when N > 0, M > 0 -> sublist(List, N, M, 1, []).
+sublist(_, N, M) when N > M -> [];
+sublist([], _, _) -> [];
 
-sublist([], _, _, _, Acc) -> lists:reverse(Acc);
-sublist([Head | Tail], N, M, CurrentIndex, Acc) when CurrentIndex >= N, CurrentIndex =< M ->
-    sublist(Tail, N, M, CurrentIndex + 1, [Head | Acc]);
-sublist([_ | Tail], N, M, CurrentIndex, Acc) ->
-    sublist(Tail, N, M, CurrentIndex + 1, Acc).
+sublist([H|T], N, M) when N =< M, N > 1 -> sublist(T, N-1, M-1);
+sublist([H|T], 1, M) when M > 0 -> [H | sublist(T, 1, M-1)];
+sublist(_, _, 0) -> [].

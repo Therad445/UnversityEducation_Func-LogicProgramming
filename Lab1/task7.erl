@@ -1,30 +1,44 @@
+% -module(task7).
+% -export([is_date/3]).
+
+% % Определяем дни недели с 0 (понедельник) до 6 (воскресенье)
+% % 1 января 2000 года - суббота, поэтому у нас начальное смещение равно 5.
+% % Смещение увеличивается на 1 для каждого нового дня.
+% is_date(Day, Month, Year) ->
+%     WeekdayOffset = weekday_offset(2000),
+%     Days = days_in_month(Month, Year),
+%     is_date_helper(Day, Month, WeekdayOffset, 1, Days, is_leap_year(Year)).
+
+% % Рекурсивная функция, которая увеличивает смещение на 1 для каждого дня и проверяет,
+% % не дошли ли мы до искомой даты.
+% is_date_helper(Day, 1, WeekdayOffset, CurrentDay, _, LeapYear) ->
+%     case Day of
+%         CurrentDay -> WeekdayOffset rem 7;
+%         _ -> is_date_helper(Day, 12, WeekdayOffset + 1, CurrentDay + 1, days_in_month(12, LeapYear), LeapYear)
+%     end;
+% is_date_helper(Day, Month, WeekdayOffset, CurrentDay, Days, LeapYear) ->
+%     case Day of
+%         CurrentDay -> WeekdayOffset rem 7;
+%         _ -> is_date_helper(Day, Month - 1, WeekdayOffset + 1, CurrentDay + 1, days_in_month(Month - 1, LeapYear), LeapYear)
+%     end.
+
+% % Функция определяет количество дней в месяце.
+% days_in_month(2, true) -> 29;
+% days_in_month(2, false) -> 28;
+% days_in_month(Month, _) when Month rem 2 == 0 -> 30;
+% days_in_month(_, _) -> 31.
+
+% % Функция определяет начальное смещение дня недели для заданного года.
+% weekday_offset(Year) ->
+%     ((Year - 2000) * 365 + (Year - 2000) div 4 - (Year - 2000) div 100 + (Year - 2000) div 400).
+
+% % Проверка, является ли год високосным.
+% is_leap_year(Year) ->
+%     (Year rem 4 == 0) and ((Year rem 100 /= 0) or (Year rem 400 == 0)).
+
 -module(task7).
 -export([is_date/3]).
 
-% Функция для определения високосного года
-is_leap_year(Year) when Year rem 4 =:= 0, Year rem 100 =/= 0; Year rem 400 =:= 0 -> true;
-is_leap_year(_) -> false.
-
-% Функция для определения количества дней в месяце
-days_in_month(2, Year) when is_leap_year(Year) -> 29;
-days_in_month(2, _) -> 28;
-days_in_month(Month, _) when Month rem 2 =:= 0, Month =< 7 -> 30;
-days_in_month(Month, _) -> 31.
-
-% Функция для определения номера дня недели по заданной дате
 is_date(DayOfMonth, MonthOfYear, Year) ->
-    is_date(DayOfMonth, MonthOfYear, Year, 0, 0, 2000, 6).
-
-is_date(1, 1, 2000, _, _, _, DayOfWeek) -> DayOfWeek;
-is_date(Day, Month, Year, DayOfWeekAcc, DayOfMonthAcc, YearAcc, DayOfWeek) ->
-    DaysInMonth = days_in_month(MonthOfYear, Year),
-    case {Day, Month, Year, DayOfWeekAcc} of
-        {_, _, _, 6} -> is_date(Day, Month, Year, 0, DayOfMonthAcc, YearAcc + 1, DayOfWeek);
-        {_, _, _, _} -> 
-            case {Day, Month, Year, DayOfWeekAcc} of
-                {DayOfMonthAcc, MonthOfYear, YearAcc, _} ->
-                    is_date(Day, Month, Year, DayOfWeekAcc + 1, 1, YearAcc, DayOfWeek);
-                {_, _, _, _} ->
-                    is_date(Day + 1, Month, Year, DayOfWeekAcc + 1, DayOfMonthAcc + 1, YearAcc, DayOfWeek)
-            end
-    end.
+    DayOfWeek = 1 + (DayOfMonth + 13 * (MonthOfYear - 1) + 15 * (Year - 1900) + 1900) rem 7,
+    DayOfWeek.
