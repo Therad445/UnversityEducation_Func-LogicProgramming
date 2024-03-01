@@ -1,7 +1,8 @@
 -module(task6).
 -export([sortBy/2]).
 
-% Функция для слияния двух отсортированных списков
+% task6:sortBy([1,30],[2]).
+
 merge([], L) -> L;
 merge(L, []) -> L;
 merge([H1 | T1], [H2 | T2]) ->
@@ -11,12 +12,10 @@ merge([H1 | T1], [H2 | T2]) ->
         greater -> [H2 | merge([H1 | T1], T2)]
     end.
 
-% Функция для сравнения двух элементов
 compare(X, Y) when X < Y -> less;
 compare(X, Y) when X > Y -> greater;
 compare(_, _) -> equal.
 
-% Функция для разделения списка на две половины
 split(List) ->
     split(List, List).
 
@@ -28,7 +27,6 @@ split([_], Rest) ->
 split([], Rest) ->
     {[], Rest}.
 
-% Функция сортировки слиянием
 sortBy(Comparator, List) ->
     case List of
         [] -> [];

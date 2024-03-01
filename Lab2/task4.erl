@@ -15,3 +15,6 @@ integrate(F, N) ->
         ),
         Sum
     end.
+
+% F1 = task4:integrate(fun(X) -> X end, 100), F1(0, 1).
+% 0.4949999999999999

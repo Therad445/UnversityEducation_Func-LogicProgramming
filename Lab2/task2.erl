@@ -7,3 +7,6 @@ takewhile(Pred, [Head | Tail]) ->
         true -> [Head | takewhile(Pred, Tail)];
         false -> []
     end.
+
+% task2:takewhile(fun(X) -> X < 10 end, [1,3,9,11,6]).
+% [1,3,9]
