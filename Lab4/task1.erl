@@ -1,37 +1,50 @@
--module(star).
--export([star/2, center/1, process/2]).
+-module(task1).
+-export([star/2]).
+
+% task1:star(3,2).
+% Попробуй запустить на компьютере
 
 star(N, M) ->
+    CenterPid = spawn_link(fun() -> center(N, M) end),
     io:format("Current process is ~p~n", [self()]),
-    Center = spawn(star, center, [[]]),
-    lists:foreach(fun(_) -> spawn(star, process, [Center, M]) end, lists:seq(1, N)),
-    center:loop(N, M).
+    Pids = spawn_processes(N, CenterPid, M),
+    broadcast(Pids, self(), 0, M).
 
-center(Pids) ->
-    io:format("Created ~p (center)~n", [self()]),
-    loop(Pids).
+spawn_processes(0, _, _) ->
+    [];
+spawn_processes(N, CenterPid, M) ->
+    Pid = spawn_link(fun() -> process(N, CenterPid, M) end),
+    io:format("Created ~p~n", [Pid]),
+    [Pid | spawn_processes(N - 1, CenterPid, M)].
 
-process(Center, M) ->
-    Self = self(),
+center(N, M) ->
+    loop(N, M, lists:duplicate(N, 0), 0).
+
+loop(_, 0, _, _) ->
+    ok;
+loop(N, M, Counters, Round) ->
+    io:format("~p received ~p from <0.~p.0>~n", [self(), Round, self()]),
+    NextRound = Round + 1,
+    io:format("~p received ~p from <0.~p.0>~n", [self(), Round, self()]),
+    broadcast(Counters, self(), NextRound, M),
+    loop(N, M - 1, [0 | lists:delete_first(Round, Counters)], NextRound).
+
+broadcast([], _, _, _) ->
+    ok;
+broadcast([Pid | Pids], Sender, Round, M) ->
+    Pid ! {Sender, Round, M},
+    broadcast(Pids, Sender, Round, M).
+
+process(N, CenterPid, M) ->
+    loop(N, CenterPid, M).
+
+loop(_, CenterPid, 0) ->
+    CenterPid ! finished;
+loop(N, CenterPid, M) ->
     receive
-        {send, Msg} ->
-            io:format("~p received ~p from ~p~n", [Self, Msg, Center]),
-            Center ! {reply, Msg + 1},
-            process(Center, M - 1);
-        stop ->
-            io:format("~p finished~n", [Self])
-    end,
-    if M > 0 -> process(Center, M); true -> ok end.
-
-loop([]) -> ok;
-loop(Pids) ->
-    Pids2 = lists:map(fun(Pid) -> Pid ! {send, 0} end, Pids),
-    lists:foreach(fun(_) -> receive {reply, _} -> ok end end, Pids2),
-    loop(Pids).
-
-loop(0, _) ->
-    lists:foreach(fun(Pid) -> Pid ! stop end, self()).
-loop(N, M) ->
-    loop(N - 1, M),
-    Center = self(),
-    Center ! {send, N}.
+        {Sender, Round, MLeft} ->
+            io:format("~p received ~p from ~p~n", [self(), Round, Sender]),
+            NextRound = Round + 1,
+            Sender ! {NextRound, MLeft - 1},
+            loop(N, CenterPid, MLeft - 1)
+    end.

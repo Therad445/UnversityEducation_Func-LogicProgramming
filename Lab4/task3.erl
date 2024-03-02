@@ -1,44 +1,52 @@
--module(parallel).
+-module(task3).
 -export([par_foreach/3]).
 
 par_foreach(F, List, Options) ->
-    {SublistSize, Processes, Timeout} = proplists:get_value(options, Options, {1, length(List), infinity}),
+    SublistSize = proplists:get_value(sublist_size, Options, 1),
+    NumProcesses = proplists:get_value(processes, Options, length(List)),
     Sublists = split_list(List, SublistSize),
-    Pids = start_processes(F, Sublists, Processes),
-    wait_for_completion(Pids, Timeout).
+    process_sublists(F, Sublists, NumProcesses).
 
 split_list(List, SublistSize) ->
-    lists:reverse(split_list_acc(List, SublistSize, [])).
+    split_list(List, SublistSize, []).
 
-split_list_acc([], _, Acc) -> Acc;
-split_list_acc(List, SublistSize, Acc) ->
+split_list([], _, Acc) ->
+    lists:reverse(Acc);
+split_list(List, SublistSize, Acc) when length(List) < SublistSize ->
+    lists:reverse([List | Acc]);
+split_list(List, SublistSize, Acc) ->
     {Head, Tail} = lists:split(SublistSize, List),
-    split_list_acc(Tail, SublistSize, [Head | Acc]).
+    split_list(Tail, SublistSize, [Head | Acc]).
 
-start_processes(F, Sublists, NumProcesses) ->
-    lists:map(fun(Sublist) ->
-        spawn_link(fun() -> process_sublist(F, Sublist) end)
-    end, lists:take(NumProcesses, Sublists)).
+process_sublists(_, [], _) ->
+    ok;
+process_sublists(F, [Sublist | Sublists], NumProcesses) ->
+    Pids = spawn_processes(F, Sublist, NumProcesses),
+    wait_for_processes(Pids),
+    process_sublists(F, Sublists, NumProcesses).
 
-process_sublist(F, Sublist) ->
-    lists:foreach(F, Sublist),
-    ok.
+spawn_processes(_, [], _) ->
+    [];
+spawn_processes(F, Sublist, NumProcesses) ->
+    Pids = spawn_processes(F, Sublist, NumProcesses, []),
+    wait_for_processes(Pids).
 
-wait_for_completion(Pids, Timeout) ->
-    case erlang:monitor(process, Pids) of
-        {_, _} ->
-            receive
-                {'DOWN', _Ref, process, Pid, _Reason} when Pid in Pids ->
-                    case lists:keymember(Pid, 1, Pids) of
-                        true ->
-                            NewPid = spawn_link(fun() -> process_sublist(F, lists:nth(1, lists:dropwhile(fun(X) -> X /= Pid end, Pids))) end),
-                            wait_for_completion(Pids ++ [NewPid], Timeout);
-                        false ->
-                            wait_for_completion(lists:delete(Pid, Pids), Timeout)
-                    end
-            after Timeout ->
-                exit({timeout, Timeout})
-            end;
-        _ ->
-            ok
+spawn_processes(_, [], _, Acc) ->
+    Acc;
+spawn_processes(F, Sublist, NumProcesses, Acc) ->
+    Pid = spawn_link(fun() -> apply_functions(F, Sublist) end),
+    spawn_processes(F, Sublist, NumProcesses - 1, [Pid | Acc]).
+
+apply_functions(_, []) ->
+    ok;
+apply_functions(F, List) ->
+    lists:foreach(F, List).
+
+
+wait_for_processes([]) ->
+    ok;
+wait_for_processes([Pid | Pids]) ->
+    receive
+        {Pid, ok} ->
+            wait_for_processes(Pids)
     end.

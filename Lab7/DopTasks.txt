@@ -1,0 +1,118 @@
+Давайте начнем с решения задачи о нахождении простых делителей числа и их кратности.
+
+5. Определим предикат `prime_factors(Num, Factors)`, который находит все простые делители числа Num и их кратность:
+
+```prolog
+% Предикат для проверки, является ли число простым.
+is_prime(N) :-
+    N > 1,
+    is_prime(N, 2).
+
+is_prime(N, D) :-
+    N =:= D, % Базовый случай: если делитель равен числу, значит число простое.
+    !.
+is_prime(N, D) :-
+    N mod D =\= 0, % Если число не делится на текущий делитель, проверяем следующий.
+    D1 is D + 1,
+    is_prime(N, D1).
+
+% Предикат для нахождения простых делителей числа и их кратности.
+prime_factors(N, Factors) :-
+    prime_factors(N, 2, [], Factors).
+
+prime_factors(1, _, Acc, Factors) :-
+    reverse(Acc, Factors).
+prime_factors(N, D, Acc, Factors) :-
+    N mod D =:= 0, % Если D делит N.
+    count_divisors(N, D, Count, N1), % Находим кратность делителя D в числе N.
+    append(Acc, [factor(D, Count)], Acc1), % Добавляем D и его кратность в список.
+    prime_factors(N1, D, Acc1, Factors).
+prime_factors(N, D, Acc, Factors) :-
+    \+ is_prime(D), % Если D не простое число, переходим к следующему числу.
+    D1 is D + 1,
+    prime_factors(N, D1, Acc, Factors).
+prime_factors(N, D, Acc, Factors) :-
+    is_prime(D), % Если D простое число, но не делит N, переходим к следующему простому числу.
+    D1 is D + 1,
+    prime_factors(N, D1, Acc, Factors).
+
+% Предикат для подсчета кратности делителя в числе.
+count_divisors(N, D, Count, N1) :-
+    N mod D =:= 0, % Если D делит N.
+    N2 is N // D,
+    count_divisors(N2, D, Count1, N1),
+    Count is Count1 + 1.
+count_divisors(N, _, 0, N). % Базовый случай: если D не делит N, возвращаем 0 кратность.
+```
+
+Теперь реализуем предикат `polynomize(Expr, Poly)`.
+
+6. Определим предикат `polynomize(Expr, Poly)`, который преобразует арифметическое выражение в многочлен в нормальной форме:
+
+```prolog
+% Определение операторов.
+:- op(600, xfy, '+'). % Сложение
+:- op(400, yfx, '*'). % Умножение
+:- op(200, xfy, '^'). % Возведение в степень
+
+% Предикат для раскрытия всех возможных многочленов.
+polynomize(Expr, Poly) :-
+    expand(Expr, Expanded),
+    simplify(Expanded, Poly).
+
+% Предикат для раскрытия всех возможных выражений.
+expand(X, X) :-
+    atomic(X). % Если X атом, он остается неизменным.
+expand(X^N, Expanded) :-
+    number(N),
+    N > 1,
+    expand(X, X1),
+    expand(X^(N-1), X2),
+    Expanded = X1 * X2.
+expand(X^1, X).
+expand(X^0, 1).
+expand(X*Y, Expanded) :-
+    expand(X, X1),
+    expand(Y, Y1),
+    Expanded = X1 * Y1.
+expand(X+Y, Expanded) :-
+    expand(X, X1),
+    expand(Y, Y1),
+    Expanded = X1 + Y1.
+
+% Предикат для упрощения многочленов.
+simplify(X+Y, Sum) :-
+    !,
+    simplify(X, Xs),
+    simplify(Y, Ys),
+    combine(Xs, Ys, Sum).
+simplify(X*Y, Prod) :-
+    !,
+    simplify(X, Xs),
+    simplify(Y, Ys),
+    multiply(Xs, Ys, Prod).
+simplify(X, X).
+
+% Предикат для комбинации двух многочленов.
+combine(X, 0, X) :- !.
+combine(0, Y, Y) :- !.
+combine(factor(X, N1
+
+), factor(X, N2), factor(X, N)) :-
+    !,
+    N is N1 + N2.
+combine(factor(X, N1), Y, X+Y) :- N1 > 0, !.
+combine(X, factor(Y, N1), X+Y) :- N1 > 0, !.
+combine(X, Y, X+Y).
+
+% Предикат для перемножения двух многочленов.
+multiply(factor(X, N), factor(Y, M), factor(X*Y, N*M)).
+
+% Пример использования оператора для удобства записи выражений.
+test_polynomize :-
+    Expr = (x + x)*(x + 1),
+    polynomize(Expr, Poly),
+    write(Poly).
+```
+
+Теперь у нас есть предикаты `prime_factors` и `polynomize`, которые выполняют заданные условия. Если у вас есть еще какие-то вопросы или нужна дополнительная помощь, пожалуйста, дайте знать!

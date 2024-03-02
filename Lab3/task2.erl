@@ -1,26 +1,62 @@
--module(multiset).
--export([new/0, add/2, remove/2, count/2, elements/1, union/2, intersection/2, difference/2]).
+-module(task2).
+-export([new/0, add/2, remove/2, count/2, elements/1]).
 
-% Создание пустого мультимножества
-new() -> dict:new().
+-record(multiset, {map = #{}}).
 
-% Добавление элемента в мультимножество с указанием его количества
-add(Element, Count, Multiset) -> dict:update_counter(Element, Count, 1, Multiset).
+%% Функция создания нового пустого мультимножества
+new() ->
+    #multiset{map = #{}}.
 
-% Удаление элемента из мультимножества
-remove(Element, Count, Multiset) -> dict:update_counter(Element, -Count, 1, Multiset).
+%% Функция добавления элемента в мультимножество
+add(Element, Multiset) ->
+    UpdatedMap = maps:update_with(Element, fun(Count) -> Count + 1 end, 1, Multiset#multiset.map),
+    Multiset#multiset{map = UpdatedMap}.
 
-% Получение количества элементов в мультимножестве
-count(Element, Multiset) -> dict:fetch(Element, Multiset, 0).
+%% Функция удаления элемента из мультимножества
+remove(Element, Multiset) ->
+    case maps:is_key(Element, Multiset#multiset.map) of
+        true ->
+            Count = maps:get(Element, Multiset#multiset.map),
+            case Count of
+                1 ->
+                    UpdatedMap = maps:remove(Element, Multiset#multiset.map),
+                    Multiset#multiset{map = UpdatedMap};
+                _ ->
+                    UpdatedMap = maps:update_with(Element, fun(Count) -> Count - 1 end, Multiset#multiset.map),
+                    Multiset#multiset{map = UpdatedMap}
+            end;
+        false ->
+            Multiset
+    end.
 
-% Получение всех элементов мультимножества
-elements(Multiset) -> dict:fold(fun(Element, Count, Acc) -> [{Element, Count} | Acc] end, [], Multiset).
+%% Функция получения количества вхождений элемента в мультимножество
+count(Element, Multiset) ->
+    maps:get(Element, Multiset#multiset.map, 0).
 
-% Объединение двух мультимножеств
-union(Multiset1, Multiset2) -> dict:merge(fun(_, Count1, Count2) -> Count1 + Count2 end, Multiset1, Multiset2).
+%% Функция получения всех элементов мультимножества
+elements(Multiset) ->
+    maps:fold(fun(Element, Count, Acc) ->
+                   lists:duplicate(Count, Element) ++ Acc
+               end, [], Multiset#multiset.map).
 
-% Пересечение двух мультимножеств
-intersection(Multiset1, Multiset2) -> dict:fold(fun(Element, Count1, Acc) -> NewCount = min(Count1, count(Element, Multiset2)), dict:update(Element, NewCount, Acc) end, dict:new(), Multiset1).
 
-% Разность двух мультимножеств
-difference(Multiset1, Multiset2) -> dict:fold(fun(Element, Count1, Acc) -> NewCount = Count1 - count(Element, Multiset2), dict:update(Element, NewCount, Acc) end, dict:new(), Multiset1).
+
+
+% 1> c(multiset).
+% {ok,multiset}
+% 2> Multiset1 = task2:new().
+% #multiset{dict = #{}}  % Создали новое пустое мультимножество
+% 3> Multiset2 = task2:add(a, Multiset1).
+% #multiset{dict = #{a => 1}}  % Добавили элемент 'a' в мультимножество
+% 4> Multiset3 = task2:add(b, Multiset2).
+% #multiset{dict = #{a => 1,b => 1}}  % Добавили элемент 'b' в мультимножество
+% 5> Multiset4 = task2:add(a, Multiset3).
+% #multiset{dict = #{a => 2,b => 1}}  % Добавили еще один раз элемент 'a'
+% 6> task2:count(a, Multiset4).
+% 2  % Количество вхождений элемента 'a' в мультимножество
+% 7> task2:count(c, Multiset4).
+% 0  % Элемент 'c' не присутствует в мультимножестве
+% 8> Multiset5 = task2:remove(a, Multiset4).
+% #multiset{dict = #{a => 1,b => 1}}  % Удалили одно вхождение элемента 'a'
+% 9> task2:elements(Multiset5).
+% [b,a]  % Получили все элементы мультимножества в виде списка
