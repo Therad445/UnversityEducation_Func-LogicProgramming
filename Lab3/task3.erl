@@ -61,10 +61,10 @@ union(Multiset1, Multiset2) ->
 
 % 1> c(task3).
 % {ok,task3}
-% 2> Multiset1 = task3:add(a, task3:add(b, task3:add(a, task3:new()))).
-% #multiset{map = #{a => 2,b => 1}}
-% 3> Multiset2 = task3:add(a, task3:add(c, task3:new())).
-% #multiset{map = #{a => 1,c => 1}}
+% 2> Multiset1 = task3:add(a, task3:add(b, task3:new())).
+% #multiset{map = #{a => 1,b => 1}}
+% 3> Multiset2 = task3:add(c, task3:new()).
+% #multiset{map = #{c => 1}}
 % 4> UnionMultiset = task3:union(Multiset1, Multiset2).
 % #multiset{map = #{a => 3,b => 1,c => 1}}
 
