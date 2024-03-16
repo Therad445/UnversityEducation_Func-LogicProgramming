@@ -1,17 +1,14 @@
 % База предикатов для работы со списками
 
-% Определение членства в списке
 my_member(Element, [Element|_]).
 my_member(Element, [_|Tail]) :-
     my_member(Element, Tail).
 
-% Определение длины списка
 my_length([], 0).
 my_length([_|Tail], Length) :-
     my_length(Tail, TailLength),
     Length is TailLength + 1.
 
-% Определение конкатенации списков
 my_append([], List, List).
 my_append([Head|Tail1], List2, [Head|Result]) :-
     my_append(Tail1, List2, Result).

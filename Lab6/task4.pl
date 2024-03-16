@@ -1,20 +1,18 @@
-my_flatten([], []). % Базовый случай: пустой список не требует дополнительной обработки.
-
+my_flatten([], []). % Базовый случай
 my_flatten([Head|Tail], Flattened) :-
-    is_list(Head), % Если голова списка является списком,
-    !, % то предпримем операции со вложенным списком.
-    my_flatten(Head, FlattenedHead), % "Расплющиваем" вложенный список.
-    my_flatten(Tail, FlattenedTail), % Продолжаем "расплющивать" оставшуюся часть списка.
-    append(FlattenedHead, FlattenedTail, Flattened). % Объединяем "расплющенную" голову списка с "расплющенным" хвостом.
+    is_list(Head),
+    !,
+    my_flatten(Head, FlattenedHead), 
+    my_flatten(Tail, FlattenedTail), 
+    append(FlattenedHead, FlattenedTail, Flattened).
     
 my_flatten([Head|Tail], [Head|FlattenedTail]) :-
-    % Если голова списка не является списком, добавляем ее к "расплющенному" хвосту.
-    % Затем рекурсивно "расплющиваем" оставшуюся часть списка.
+    % Рекурсивно разбиваем оставшуюся часть
     \+ is_list(Head),
     my_flatten(Tail, FlattenedTail).
 
 :- begin_tests(my_flatten).
-
+% Тесты
 test(empty_list) :-
     my_flatten([], []),
     !.
