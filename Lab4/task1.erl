@@ -1,50 +1,40 @@
 -module(task1).
 -export([star/2]).
 
-% task1:star(3,2).
-% Попробуй запустить на компьютере
-
 star(N, M) ->
-    CenterPid = spawn_link(fun() -> center(N, M) end),
-    io:format("Current process is ~p~n", [self()]),
-    Pids = spawn_processes(N, CenterPid, M),
-    broadcast(Pids, self(), 0, M).
+    Self = self(),
+    io:format("Current process is ~p~n", [Self]),
+    Center = spawn_link(fun() -> center(Self, N, M) end),
+    io:format("Created ~p (center)~n", [Center]),
+    create_processes(Center, N).
 
-spawn_processes(0, _, _) ->
-    [];
-spawn_processes(N, CenterPid, M) ->
-    Pid = spawn_link(fun() -> process(N, CenterPid, M) end),
+create_processes(_, 0) ->
+    ok;
+create_processes(Center, N) ->
+    Pid = spawn_link(fun() -> process(Center, N) end),
     io:format("Created ~p~n", [Pid]),
-    [Pid | spawn_processes(N - 1, CenterPid, M)].
+    create_processes(Center, N - 1).
 
-center(N, M) ->
-    loop(N, M, lists:duplicate(N, 0), 0).
-
-loop(_, 0, _, _) ->
-    ok;
-loop(N, M, Counters, Round) ->
-    io:format("~p received ~p from <0.~p.0>~n", [self(), Round, self()]),
-    NextRound = Round + 1,
-    io:format("~p received ~p from <0.~p.0>~n", [self(), Round, self()]),
-    broadcast(Counters, self(), NextRound, M),
-    loop(N, M - 1, [0 | lists:delete_first(Round, Counters)], NextRound).
-
-broadcast([], _, _, _) ->
-    ok;
-broadcast([Pid | Pids], Sender, Round, M) ->
-    Pid ! {Sender, Round, M},
-    broadcast(Pids, Sender, Round, M).
-
-process(N, CenterPid, M) ->
-    loop(N, CenterPid, M).
-
-loop(_, CenterPid, 0) ->
-    CenterPid ! finished;
-loop(N, CenterPid, M) ->
+center(Parent, N, M) ->
     receive
-        {Sender, Round, MLeft} ->
-            io:format("~p received ~p from ~p~n", [self(), Round, Sender]),
-            NextRound = Round + 1,
-            Sender ! {NextRound, MLeft - 1},
-            loop(N, CenterPid, MLeft - 1)
+        {message, From, 0} ->
+            io:format("~p received 0 from ~p~n", [self(), From]),
+            Parent ! {reply, self(), 1},
+            center(Parent, N, M);
+        {message, From, Num} when Num < M ->
+            io:format("~p received ~p from ~p~n", [self(), Num, From]),
+            Parent ! {reply, self(), Num + 1},
+            center(Parent, N, M);
+        {message, From, M} ->
+            io:format("~p received ~p from ~p~n", [self(), M, From]),
+            Parent ! {reply, self(), M},
+            ok
+    end.
+
+process(Center, N) ->
+    Center ! {message, self(), 0},
+    receive
+        {reply, From, Num} ->
+            io:format("~p received ~p from ~p~n", [self(), Num, From]),
+            process(Center, N)
     end.
